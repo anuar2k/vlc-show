@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, vlc, time, argparse
+import sys, vlc, time, argparse, threading
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='VLC Control')
@@ -23,19 +23,27 @@ if __name__ == '__main__':
 		stringified_set = ', '.join(mrl_set)
 		print(f'MRL set {i}: {stringified_set}')
 
+	finished_playing_sem = threading.Semaphore(0)
+
 	inst = vlc.Instance()
-	list_player = inst.media_list_player_new()
-	media_lists = [inst.media_list_new(mrl_set) for mrl_set in args.mrl_sets]
+	player = inst.media_player_new()
+	player.event_manager().event_attach(
+		vlc.EventType.MediaPlayerEndReached,
+		lambda _: finished_playing_sem.release()
+	)
+
+	media_lists = [
+		[inst.media_new(mrl) for mrl in mrl_set]
+		for mrl_set
+		in args.mrl_sets
+	]
 
 	while True:
 		for i, media_list in enumerate(media_lists):
-			print(f'Playing media list no {i} in 1 sec for 3 secs')
-			# list_player.stop()
+			print(f'Playing media list no {i}')
 
-			list_player.set_media_list(media_list)
-			time.sleep(1)
-
-			list_player.play()
-			list_player.set_pause(0)
-			time.sleep(3)
-			list_player.set_pause(1)
+			for media in media_list:
+				player.set_media(media)
+				player.play()
+				finished_playing_sem.acquire()
+				print('finished playing, going to next material')
