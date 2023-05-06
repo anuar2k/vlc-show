@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
+# Example call:
+# ./script.py --mrl-set movie_a.mp4 movie_b.mp4 pic_a.png \
+#             --mrl-set movie_c.mp4 pic_b.png \
+#	          --mrl-set movie_d.mp4 movie_e.mp4
 
 import sys, vlc, argparse
-from .vlc_player import VlcPlayer
+from vlc_player import VlcPlayer
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='VLC Control')
@@ -42,4 +46,11 @@ if __name__ == '__main__':
 			player.stop()
 			break
 
-		player.play(media_lists[int(selection)])
+		try:
+			selected_list = media_lists[int(selection)]
+		except ValueError:
+			print('input is not an integer')
+		except IndexError:
+			print('index out of range')
+		else:
+			player.play(selected_list)

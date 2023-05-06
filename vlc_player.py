@@ -18,12 +18,15 @@ class VlcPlayer:
             lambda _: self.queue.put(('next', None))
         )
 
+        self.player.set_fullscreen(True)
+        self.player.set_video_title_display(vlc.Position.disable, 0)
         self.thread.start()
 
     def _thread_entrypoint(self):
         while True:
             action, args = self.queue.get()
             if action == 'stop':
+                self.player.stop()
                 return
 
             self.action_handlers[action](args)
